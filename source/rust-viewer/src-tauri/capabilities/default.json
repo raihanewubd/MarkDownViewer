@@ -1,0 +1,6 @@
+{
+  "identifier": "main-window",
+  "description": "Local reader window events",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MarkUp Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="brand"><span class="brand-icon">M↓</span><strong>MarkUp</strong></div>
+    <button id="open" class="primary" title="Open a document (Ctrl+O)">Open file</button>
+    <span class="divider"></span>
+    <button id="contents" aria-pressed="true" title="Toggle table of contents">Contents</button>
+    <button id="source-button" aria-pressed="false" title="View Markdown source (Ctrl+U)">View source</button>
+    <div class="toolbar-spacer"></div>
+    <button id="find-button" title="Find text (Ctrl+F)">Find</button>
+    <button id="zoom-out" title="Zoom out (Ctrl+-)" aria-label="Zoom out">−</button>
+    <span id="zoom-label">100%</span>
+    <button id="zoom-in" title="Zoom in (Ctrl++)" aria-label="Zoom in">+</button>
+    <button id="theme" title="Switch light or dark theme (Ctrl+D)">Dark</button>
+  </header>
+  <section id="find-bar" hidden aria-label="Find in document">
+    <input id="find-input" type="search" placeholder="Find in document…" aria-label="Find text">
+    <span id="find-count"></span>
+    <button id="find-prev" aria-label="Previous match">↑</button>
+    <button id="find-next" aria-label="Next match">↓</button>
+    <button id="find-close" aria-label="Close find">×</button>
+  </section>
+  <div class="layout">
+    <aside id="sidebar" aria-label="Table of contents">
+      <div class="sidebar-heading">ON THIS PAGE <span id="heading-count"></span></div>
+      <nav id="toc"><p class="muted">Open a document to see its headings.</p></nav>
+    </aside>
+    <main id="reader">
+      <div id="document-heading" hidden><span class="file-badge">MD</span><span id="filename"></span></div>
+      <section id="welcome">
+        <span class="welcome-icon">M↓</span>
+        <p class="eyebrow">YOUR DOCUMENTS, CLEARLY</p>
+        <h1>A quieter way to read Markdown.</h1>
+        <p>Open a file to see its formatted content.<br>Headings, tables, images, and code examples—all in one place.</p>
+        <button id="welcome-open" class="primary">Open a Markdown file</button>
+        <p class="welcome-hint">or drop a file here · Ctrl+O</p>
+      </section>
+      <article id="preview" hidden></article>
+      <pre id="source" hidden tabindex="0" aria-label="Markdown source"></pre>
+    </main>
+  </div>
+  <footer><span id="status">Ready</span><span id="mode">Rendered view</span></footer>
+  <div id="drop-overlay" hidden>Drop your Markdown file to open it</div>
+</body>
+</html>

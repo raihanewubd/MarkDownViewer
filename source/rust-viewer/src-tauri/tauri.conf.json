@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MarkUp Viewer",
+  "version": "1.0.0",
+  "identifier": "com.markupviewer.desktop",
+  "build": { "frontendDist": "../web" },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [{
+      "label": "main",
+      "title": "MarkUp Viewer",
+      "width": 1120,
+      "height": 800,
+      "minWidth": 640,
+      "minHeight": 400,
+      "visible": false,
+      "backgroundColor": "#f8fafc"
+    }],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; connect-src ipc: http://ipc.localhost; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "MarkUp Viewer",
+    "category": "Productivity",
+    "shortDescription": "Read Markdown documents with a clear, navigable layout",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico", "icons/icon.icns"],
+    "fileAssociations": [{
+      "ext": ["md", "markdown", "mdown"],
+      "name": "Markdown document",
+      "description": "Markdown document",
+      "role": "Viewer",
+      "mimeType": "text/markdown"
+    }],
+    "windows": {
+      "webviewInstallMode": { "type": "offlineInstaller", "silent": true },
+      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false, "languages": ["English"], "startMenuFolder": "MarkUp Viewer" }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+source/.venv/
+source/build/
+source/__pycache__/
+source/*.spec
+output/MarkdownViewer/
+output/startup-check-*
+output/source-check.*
+source/rust-viewer/node_modules/
+source/rust-viewer/src-tauri/target/
+source/rust-viewer/src-tauri/gen/
+output/rust/
+output/*.exe
+output/*.zip
+output/rust-check-*

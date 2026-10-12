@@ -1,0 +1,31 @@
+[package]
+name = "markup-viewer"
+version = "1.0.0"
+description = "A fast Markdown reader with an interactive table of contents"
+authors = ["MarkUp Viewer"]
+edition = "2021"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-single-instance = "2"
+pulldown-cmark = "0.13"
+ammonia = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rfd = "0.15"
+base64 = "0.22"
+url = "2"
+open = "5"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

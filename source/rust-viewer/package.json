@@ -1,0 +1,12 @@
+{
+  "name": "markup-viewer-rust",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build --bundles nsis",
+    "icons": "tauri icon app-icon.svg -o src-tauri/icons"
+  },
+  "devDependencies": { "@tauri-apps/cli": "^2.0.0" }
+}
