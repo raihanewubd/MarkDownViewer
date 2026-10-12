@@ -49,5 +49,6 @@ Keep Cargo.lock and package-lock.json in version control for reproducible depend
 - `src-tauri/src/main.rs`: desktop lifecycle, single instance, commands, file handling.
 - `web/`: reading interface, TOC, themes, search, shortcuts.
 - `src-tauri/tauri.conf.json`: runtime, application, file associations, setup configuration.
+- `src-tauri/installer-hooks.nsh`: quotes executable paths in Windows file-opening commands so paths containing spaces are handled correctly.
 
 External HTTP/HTTPS and mail links open through the OS. Local links can open only Markdown documents. Source is read-only. No analytics, network API, or account is required to read local files; remote document images and external links may use the internet.
