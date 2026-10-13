@@ -1,8 +1,8 @@
 MarkUp Viewer — Windows builds
 
 Current Rust version:
-  rust/MarkUp-Viewer-1.0.0-x64-setup.exe — full offline Windows installer
-  rust/MarkUp-Viewer.exe — standalone executable (WebView2 must be installed)
+  rust/MarkUp-Viewer-1.1.0-x64-setup.exe — full offline Windows installer
+  rust/MarkUp-Viewer-1.1.0.exe — standalone executable (WebView2 must be installed)
 
 GitHub downloads: https://github.com/raihanewubd/MarkDownViewer/releases
 Rust source and build instructions: ../source/rust-viewer

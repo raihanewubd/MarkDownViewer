@@ -4,7 +4,7 @@ A desktop Markdown reader built with **Rust and Tauri**. Open a `.md` file and r
 
 ## Download and install
 
-Download **MarkUp-Viewer-1.0.0-x64-setup.exe** from [Releases](https://github.com/raihanewubd/MarkDownViewer/releases). The Windows setup installs the app, Start menu entry, uninstaller, Markdown file-type registration, and WebView2 if missing. The offline setup includes the WebView2 runtime installer.
+Download **MarkUp-Viewer-1.1.0-x64-setup.exe** from [Releases](https://github.com/raihanewubd/MarkDownViewer/releases). The Windows setup installs the app, Start menu entry, uninstaller, Markdown file-type registration, and WebView2 if missing. The offline setup includes the WebView2 runtime installer.
 
 After installation, choose MarkUp Viewer in Windows **Open with**, then select **Always** to make it the default app for `.md` files. Windows controls the final default-app choice.
 
@@ -13,6 +13,7 @@ The standalone executable is also available in Releases. It requires the Microso
 ## Features
 
 - Formatted reading by default; optional read-only source view.
+- Multiple document tabs, each showing the full path and filename. Reopening a file selects its existing tab. Each tab retains its source/reading mode, search, and scroll position.
 - Clickable, indented table of contents with active-section highlighting.
 - Headings, tables, code blocks, task lists, strikethrough, and local raster images.
 - Open dialog, drag-and-drop, and double-click file opening.
@@ -20,6 +21,7 @@ The standalone executable is also available in Releases. It requires the Microso
 - Light/dark themes, adjustable text zoom, and document search.
 - Refresh after external saves while preserving the current view.
 - Native title-bar close exits the app; no background tray process.
+- Close a tab with its × button or Ctrl+W; cycle tabs using Ctrl+Tab and Ctrl+Shift+Tab.
 - Raw HTML and executable links in Markdown cannot run code in the viewer.
 
 ## Source and building

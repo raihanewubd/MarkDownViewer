@@ -4,6 +4,7 @@ mod document;
 use document::Document;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::VecDeque,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::SystemTime,
@@ -19,7 +20,7 @@ struct Opened {
 #[derive(Clone, Default)]
 struct ViewerState {
     opened: Arc<Mutex<Opened>>,
-    pending: Arc<Mutex<Option<PathBuf>>>,
+    pending: Arc<Mutex<VecDeque<PathBuf>>>,
     test_report: Option<PathBuf>,
 }
 
@@ -42,24 +43,30 @@ async fn open_path(path: PathBuf, state: ViewerState) -> Result<Document, String
 
 #[derive(Serialize)]
 struct Startup {
-    document: Option<Document>,
+    documents: Vec<Document>,
+    errors: Vec<String>,
     self_test: bool,
 }
 
 #[tauri::command]
 async fn startup(state: State<'_, ViewerState>) -> Result<Startup, String> {
-    let path = state
+    let paths: Vec<PathBuf> = state
         .pending
         .lock()
         .map_err(|_| "Document state unavailable")?
-        .take();
-    let document = if let Some(path) = path {
-        Some(open_path(path, state.inner().clone()).await?)
-    } else {
-        None
-    };
+        .drain(..)
+        .collect();
+    let mut documents = Vec::new();
+    let mut errors = Vec::new();
+    for path in paths {
+        match open_path(path, state.inner().clone()).await {
+            Ok(document) => documents.push(document),
+            Err(error) => errors.push(error),
+        }
+    }
     Ok(Startup {
-        document,
+        documents,
+        errors,
         self_test: state.test_report.is_some(),
     })
 }
@@ -88,6 +95,7 @@ async fn choose_document(state: State<'_, ViewerState>) -> Result<Option<Documen
 
 #[tauri::command]
 async fn refresh_document(
+    path: String,
     force: bool,
     state: State<'_, ViewerState>,
 ) -> Result<Option<Document>, String> {
@@ -96,17 +104,23 @@ async fn refresh_document(
             .opened
             .lock()
             .map_err(|_| "Document state unavailable")?;
-        opened.document.as_ref().map(|d| {
-            (
-                d.path.clone(),
-                d.revision.clone(),
-                opened.modified,
-                opened.length,
-            )
-        })
+        opened
+            .document
+            .as_ref()
+            .filter(|d| d.path == path)
+            .map(|d| {
+                (
+                    d.path.clone(),
+                    d.revision.clone(),
+                    opened.modified,
+                    opened.length,
+                )
+            })
     };
     let Some((path, revision, modified, length)) = snapshot else {
-        return Ok(None);
+        return open_path(PathBuf::from(path), state.inner().clone())
+            .await
+            .map(Some);
     };
     let metadata = std::fs::metadata(&path)
         .map_err(|_| "File unavailable; showing the last readable version.")?;
@@ -124,6 +138,7 @@ async fn refresh_document(
 #[tauri::command]
 async fn follow_link(
     href: String,
+    document_path: String,
     state: State<'_, ViewerState>,
 ) -> Result<Option<Document>, String> {
     if let Ok(url) = url::Url::parse(&href) {
@@ -139,15 +154,7 @@ async fn follow_link(
             _ => return Err("This link type is not supported.".into()),
         }
     }
-    let current = state
-        .opened
-        .lock()
-        .map_err(|_| "Document state unavailable")?
-        .document
-        .as_ref()
-        .map(|d| d.path.clone())
-        .ok_or("Open a document first")?;
-    let parent = Path::new(&current)
+    let parent = Path::new(&document_path)
         .parent()
         .ok_or("Document folder unavailable")?;
     let base = url::Url::from_directory_path(parent).map_err(|_| "Invalid document folder")?;
@@ -185,6 +192,7 @@ struct UiChecks {
     outline: bool,
     source: bool,
     navigation: bool,
+    tabs: bool,
 }
 
 #[tauri::command]
@@ -197,10 +205,10 @@ fn complete_self_test(
         .test_report
         .as_ref()
         .ok_or("Self-test is not active")?;
-    if !(checks.rendered && checks.outline && checks.source && checks.navigation) {
+    if !(checks.rendered && checks.outline && checks.source && checks.navigation && checks.tabs) {
         return Err("Frontend checks failed".into());
     }
-    let payload = serde_json::json!({"status": "passed", "checks": ["WebView2 initialization", "Rust Markdown rendering", "TOC", "source toggle", "heading navigation", "close exits process"]});
+    let payload = serde_json::json!({"status": "passed", "checks": ["WebView2 initialization", "Rust Markdown rendering", "TOC", "source toggle", "heading navigation", "multiple tabs and full path titles", "per-tab view state", "duplicate detection", "closing active and inactive tabs", "close exits process"]});
     std::fs::write(
         report,
         serde_json::to_vec_pretty(&payload).map_err(|e| e.to_string())?,
@@ -231,10 +239,10 @@ fn self_test_failed(
     Ok(())
 }
 
-fn incoming_path(args: &[String], cwd: &Path) -> Option<PathBuf> {
+fn incoming_paths(args: &[String], cwd: &Path) -> Vec<PathBuf> {
     args.iter()
         .skip(1)
-        .find(|arg| !arg.starts_with('-'))
+        .filter(|arg| !arg.starts_with('-'))
         .map(|arg| {
             let path = PathBuf::from(arg);
             if path.is_absolute() {
@@ -243,20 +251,27 @@ fn incoming_path(args: &[String], cwd: &Path) -> Option<PathBuf> {
                 cwd.join(path)
             }
         })
+        .collect()
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let state = ViewerState::default();
     let state = if args.get(1).map(String::as_str) == Some("--self-test") && args.len() == 4 {
-        *state.pending.lock().unwrap() = Some(PathBuf::from(&args[3]));
+        state
+            .pending
+            .lock()
+            .unwrap()
+            .push_back(PathBuf::from(&args[3]));
         ViewerState {
             test_report: Some(PathBuf::from(&args[2])),
             ..state
         }
     } else {
-        *state.pending.lock().unwrap() =
-            incoming_path(&args, &std::env::current_dir().unwrap_or_default());
+        state.pending.lock().unwrap().extend(incoming_paths(
+            &args,
+            &std::env::current_dir().unwrap_or_default(),
+        ));
         state
     };
     let testing = state.test_report.is_some();
@@ -264,9 +279,10 @@ fn main() {
     if !testing {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             let state = app.state::<ViewerState>();
-            if let Some(path) = incoming_path(&args, Path::new(&cwd)) {
+            let paths = incoming_paths(&args, Path::new(&cwd));
+            if !paths.is_empty() {
                 if let Ok(mut pending) = state.pending.lock() {
-                    *pending = Some(path);
+                    pending.extend(paths);
                 }
                 let _ = app.emit("open-file", ());
             }

@@ -2,6 +2,8 @@
 
 The desktop shell, file loading, Markdown parser, sanitization, link handling, and refresh logic are written in Rust. The embedded frontend is plain HTML/CSS/JavaScript without an external website or frontend framework. Windows uses the system WebView2 runtime instead of bundling Python, Qt, or Chromium.
 
+Version 1.1.0 opens documents in tabs with full path titles. Switching tabs restores each document's view mode, search and scroll position, refreshes its content, and updates the TOC. Reopening the same path selects its existing tab. Drop multiple files to open them together. Ctrl+W closes the active tab and Ctrl+Tab/Ctrl+Shift+Tab cycles tabs.
+
 ## Windows prerequisites
 
 - Rust stable with the `x86_64-pc-windows-msvc` toolchain.
@@ -27,7 +29,7 @@ The executable has an integration test mode:
 
     markup-viewer.exe --self-test ABSOLUTE_REPORT_PATH ABSOLUTE_SAMPLE_PATH
 
-Use `../sample.md` as the sample file. It initializes the real WebView2 frontend, renders the sample, verifies the TOC, source toggle and navigation, writes a JSON report, and closes the window. Verify both a passing report and successful process exit. The test window remains hidden. The Windows helper `scripts/verify.ps1 -Executable ABSOLUTE_EXE_PATH` performs this check and measures elapsed time.
+Use `../sample.md` as the sample file, with `../sample-tabs.md` alongside it. The test initializes the real WebView2 frontend, verifies rendering, TOC navigation, multiple tabs, full path titles, view restoration, duplicate detection and closing tabs, writes a JSON report, and closes the window. Verify both a passing report and successful process exit. The test window remains hidden. The Windows helper `scripts/verify.ps1 -Executable ABSOLUTE_EXE_PATH` performs this check and measures elapsed time.
 
 ## Create the full Windows setup
 

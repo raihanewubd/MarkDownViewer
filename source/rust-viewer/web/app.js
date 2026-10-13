@@ -9,6 +9,93 @@ let observer;
 let matches = [];
 let matchIndex = -1;
 let selfTest = false;
+const tabs = [];
+let activeTab = null;
+
+function saveTabState() {
+  if (activeTab) {
+    activeTab.position = $("reader").scrollTop;
+    activeTab.source = sourceMode;
+    activeTab.query = $("find-input").value;
+    activeTab.findOpen = !$("find-bar").hidden;
+  }
+}
+function drawTabs() {
+  $("tab-bar").replaceChildren();
+  $("tab-bar").hidden = !tabs.length;
+  for (const tab of tabs) {
+    const container = document.createElement("div");
+    container.className = `document-tab${tab === activeTab ? " active" : ""}`;
+    const title = document.createElement("button");
+    title.setAttribute("role", "tab");
+    title.setAttribute("aria-selected", String(tab === activeTab));
+    title.tabIndex = tab === activeTab ? 0 : -1;
+    title.textContent = tab.data.path;
+    title.title = tab.data.path;
+    title.onclick = () => enqueue(() => activateTab(tab));
+    const close = document.createElement("button");
+    close.className = "close-tab";
+    close.textContent = "×";
+    close.setAttribute("aria-label", `Close ${tab.data.path}`);
+    close.onclick = () => enqueue(() => closeTab(tab));
+    container.append(title, close);
+    $("tab-bar").append(container);
+    if (tab === activeTab) container.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+}
+function displayTab(tab) {
+  activeTab = tab;
+  $("find-input").value = tab.query;
+  $("find-bar").hidden = !tab.findOpen;
+  sourceMode = tab.source;
+  renderDocument(tab.data, true, tab.position);
+  drawTabs();
+}
+async function activateTab(tab) {
+  if (!tabs.includes(tab) || tab === activeTab) return;
+  saveTabState();
+  // Reload on switching so inactive tabs pick up external changes.
+  // If the file has disappeared, keep its last readable content.
+  try { tab.data = await invoke("open_document", { path: tab.data.path }); }
+  catch (error) { displayTab(tab); status(String(error)); return; }
+  displayTab(tab);
+}
+function openTab(data) {
+  saveTabState();
+  let tab = tabs.find((candidate) => candidate.data.path === data.path);
+  if (!tab) {
+    tab = { data, position: 0, source: false, query: "", findOpen: false };
+    tabs.push(tab);
+  } else { tab.data = data; }
+  displayTab(tab);
+}
+async function closeTab(tab = activeTab) {
+  if (!tab) return;
+  const index = tabs.indexOf(tab);
+  if (index < 0) return;
+  tabs.splice(index, 1);
+  if (tab !== activeTab) { drawTabs(); return; }
+  activeTab = null;
+  if (tabs.length) { await activateTab(tabs[Math.min(index, tabs.length - 1)]); return; }
+  documentData = null;
+  observer?.disconnect();
+  removeMarks();
+  $("preview").replaceChildren();
+  $("source").textContent = "";
+  $("preview").hidden = $("source").hidden = $("document-heading").hidden = true;
+  $("welcome").hidden = false;
+  $("find-bar").hidden = true;
+  $("toc").replaceChildren();
+  $("heading-count").textContent = "";
+  showSource(false);
+  drawTabs();
+  status("Ready");
+}
+async function cycleTab(direction) {
+  if (tabs.length < 2) return;
+  const index = (tabs.indexOf(activeTab) + direction + tabs.length) % tabs.length;
+  await activateTab(tabs[index]);
+}
 
 function status(message) { $("status").textContent = message; }
 function enqueue(operation) {
@@ -71,9 +158,10 @@ function buildToc(headings) {
   }, { root: $("reader"), rootMargin: "0px 0px -65% 0px" });
   headings.forEach((heading) => { const node = document.getElementById(heading.id); if (node) observer.observe(node); });
 }
-function renderDocument(data, preservePosition = false) {
-  const position = preservePosition ? $("reader").scrollTop : 0;
+function renderDocument(data, preservePosition = false, restoredPosition = null) {
+  const position = restoredPosition ?? (preservePosition ? $("reader").scrollTop : 0);
   documentData = data;
+  if (activeTab) activeTab.data = data;
   $("welcome").hidden = true;
   $("document-heading").hidden = false;
   $("filename").textContent = data.name;
@@ -83,12 +171,12 @@ function renderDocument(data, preservePosition = false) {
   $("source").textContent = data.source;
   buildToc(data.headings);
   showSource(preservePosition ? sourceMode : false);
-  $("reader").scrollTop = position;
+  $("reader").scrollTo({ top: position, behavior: "instant" });
   status(data.path);
 }
 async function chooseFile() {
   const data = await invoke("choose_document");
-  if (data) renderDocument(data);
+  if (data) openTab(data);
 }
 function removeMarks() {
   document.querySelectorAll("#reader mark").forEach((mark) => mark.replaceWith(document.createTextNode(mark.textContent)));
@@ -159,15 +247,17 @@ $("preview").addEventListener("click", (event) => {
   const href = link.getAttribute("href");
   if (!href) return;
   if (href.startsWith("#")) { navigate(decodeURIComponent(href.slice(1))); return; }
-  enqueue(async () => { const data = await invoke("follow_link", { href }); if (data) renderDocument(data); });
+  enqueue(async () => { const data = await invoke("follow_link", { href, documentPath: documentData.path }); if (data) openTab(data); });
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") { closeFind(); return; }
   if (!event.ctrlKey && !event.metaKey) return;
+  if (event.key === "Tab") { event.preventDefault(); enqueue(() => cycleTab(event.shiftKey ? -1 : 1)); return; }
   const key = event.key.toLowerCase();
   const shortcuts = {
     o: () => enqueue(chooseFile), u: () => showSource(!sourceMode), f: openFind,
-    d: () => $("theme").click(), r: () => enqueue(async () => { const data = await invoke("refresh_document", { force: true }); if (data) renderDocument(data, true); }),
+    w: () => enqueue(() => closeTab()),
+    d: () => $("theme").click(), r: () => enqueue(async () => { if (!documentData) return; const data = await invoke("refresh_document", { path: documentData.path, force: true }); if (data) renderDocument(data, true); }),
     "+": () => changeZoom(10), "=": () => changeZoom(10), "-": () => changeZoom(-10),
     "0": () => { zoom = 100; applyZoom(); },
   };
@@ -180,36 +270,58 @@ async function start() {
   if (!invoke) { status("Desktop bridge unavailable. Launch the installed application."); return; }
   await window.__TAURI__.event.listen("open-file", () => enqueue(async () => {
     const info = await invoke("startup");
-    if (info.document) renderDocument(info.document);
+    for (const data of info.documents) openTab(data);
+    if (info.errors.length) status(info.errors.join("; "));
   }));
   await window.__TAURI__.webviewWindow.getCurrentWebviewWindow().onDragDropEvent((event) => {
     const payload = event.payload;
     $("drop-overlay").hidden = payload.type !== "over" && payload.type !== "enter";
     if (payload.type === "drop" && payload.paths?.length) enqueue(async () => {
-      const data = await invoke("open_document", { path: payload.paths[0] });
-      renderDocument(data);
+      const errors = [];
+      for (const path of payload.paths) {
+        try { openTab(await invoke("open_document", { path })); } catch (error) { errors.push(String(error)); }
+      }
+      if (errors.length) status(errors.join("; "));
     });
   });
   const info = await invoke("startup");
   selfTest = info.self_test;
-  if (info.document) renderDocument(info.document);
+  for (const data of info.documents) openTab(data);
+  if (info.errors.length) status(info.errors.join("; "));
   await invoke("ready");
   if (selfTest) {
     const rendered = !$("preview").hidden && $("preview").querySelector("h1")?.textContent === "Welcome to Markdown Viewer";
-    const outline = $("toc").querySelectorAll("a").length === info.document.headings.length && info.document.headings.length > 1;
+    const first = tabs[0];
+    const outline = $("toc").querySelectorAll("a").length === first.data.headings.length && first.data.headings.length > 1;
     showSource(true);
     const source = !$("source").hidden && $("source").textContent.startsWith("# Welcome");
-    const last = info.document.headings.at(-1);
+    const last = first.data.headings.at(-1);
     navigate(last.id);
     const navigation = !sourceMode && !!document.getElementById(last.id) && $("toc").querySelector("a.active")?.dataset.section === last.id;
-    await invoke("complete_self_test", { checks: { rendered, outline, source, navigation } });
+    showSource(true);
+    const secondPath = first.data.path.replace(/[\\/][^\\/]+$/, "/sample-tabs.md");
+    openTab(await invoke("open_document", { path: secondPath }));
+    const second = activeTab;
+    const tabTitles = tabs.length === 2 && [...document.querySelectorAll("#tab-bar [role=tab]")].every((title, index) => title.textContent === tabs[index].data.path);
+    $("reader").scrollTo({ top: 200, behavior: "instant" });
+    const secondPosition = $("reader").scrollTop;
+    await activateTab(first);
+    const tabState = sourceMode && $("source").textContent === first.data.source && $("toc").querySelector("a")?.textContent === first.data.headings[0].text;
+    openTab(await invoke("open_document", { path: secondPath }));
+    const duplicates = tabs.length === 2 && activeTab === second;
+    const restoredScroll = secondPosition > 0 && Math.abs($("reader").scrollTop - secondPosition) < 2;
+    await closeTab(first);
+    const inactiveClose = tabs.length === 1 && activeTab === second;
+    await closeTab(second);
+    const closing = inactiveClose && tabs.length === 0 && !$("welcome").hidden && $("tab-bar").hidden;
+    await invoke("complete_self_test", { checks: { rendered, outline, source, navigation, tabs: tabTitles && tabState && restoredScroll && duplicates && closing } });
   } else {
     let refreshing = false;
     setInterval(() => {
       if (!documentData || refreshing || document.hidden) return;
       refreshing = true;
       enqueue(async () => {
-        try { const data = await invoke("refresh_document", { force: false }); if (data) renderDocument(data, true); }
+        try { if (!documentData) return; const data = await invoke("refresh_document", { path: documentData.path, force: false }); if (data) renderDocument(data, true); }
         finally { refreshing = false; }
       });
     }, 1000);
