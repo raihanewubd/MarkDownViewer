@@ -5,7 +5,7 @@ Current Rust version:
   rust/MarkUp-Viewer-1.1.0.exe — standalone executable (WebView2 must be installed)
 
 GitHub downloads: https://github.com/raihanewubd/MarkDownViewer/releases
-Rust source and build instructions: ../source/rust-viewer
+Rust source and build instructions: ../source/rust
 
 Earlier Python prototype:
 
@@ -24,5 +24,5 @@ Ctrl++ / Ctrl+-: zoom
 To open .md files by double-click, use Windows Open with and select
 MarkdownViewer.exe as your preferred application.
 
-Source code, sample document, and build instructions are in ../source.
+Python source code, sample document, and build instructions are in ../source/python.
 Build separately on macOS and Linux to produce native packages.

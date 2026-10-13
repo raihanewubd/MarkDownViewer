@@ -26,7 +26,7 @@ The standalone executable is also available in Releases. It requires the Microso
 
 ## Source and building
 
-The current application is in [`source/rust-viewer`](source/rust-viewer). See its [build instructions](source/rust-viewer/README.md). The earlier Python prototype remains in `source/` for reference.
+The current Rust application is in [`source/rust`](source/rust). See its [build instructions](source/rust/README.md). The earlier Python prototype and its [build instructions](source/python/README.md) are in [`source/python`](source/python).
 
 The code supports Windows, macOS, and Linux, but each platform needs its own native build and development prerequisites. The downloadable build is Windows x64.
 

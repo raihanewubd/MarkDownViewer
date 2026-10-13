@@ -6,7 +6,7 @@ import subprocess
 import sys
 import uuid
 
-root = Path(__file__).resolve().parent.parent
+root = Path(__file__).resolve().parent.parent.parent
 if sys.platform != "win32":
     raise SystemExit("This verifier targets the Windows executable")
 report = root / "output" / f"startup-check-{uuid.uuid4().hex}.json"
@@ -17,7 +17,7 @@ for key in ("PYTHONPATH", "PYTHONHOME", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGI
     environment.pop(key, None)
 subprocess.run([
     str(root / "output" / "MarkdownViewer" / "MarkdownViewer.exe"),
-    "--self-test", str(report), str(root / "source" / "sample.md"),
+    "--self-test", str(report), str(root / "source" / "python" / "sample.md"),
 ], cwd=windows, env=environment, timeout=60, check=True)
 assert report.exists(), "Executable did not produce a success report"
 result = json.loads(report.read_text(encoding="utf-8"))

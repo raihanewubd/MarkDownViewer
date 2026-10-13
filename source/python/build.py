@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-workspace = HERE.parent
+workspace = HERE.parent.parent
 build_root = HERE / "build" / uuid.uuid4().hex
 staging = build_root / "dist"
 environment = os.environ.copy()

@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 if (-not $Executable) { $Executable = Join-Path $projectRoot 'output/rust/MarkUp-Viewer.exe' }
 $reportPath = Join-Path $projectRoot ('output/rust-check-' + [Guid]::NewGuid().ToString('N') + '.json')
-$samplePath = Join-Path $projectRoot 'source/sample.md'
+$samplePath = Join-Path $projectRoot 'source/rust/sample.md'
 $timer = [Diagnostics.Stopwatch]::StartNew()
 $testProcess = Start-Process -FilePath $Executable -ArgumentList @('--self-test', ('"' + $reportPath + '"'), ('"' + $samplePath + '"')) -WindowStyle Hidden -PassThru
 if (-not $testProcess.WaitForExit(60000)) {

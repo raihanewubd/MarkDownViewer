@@ -17,7 +17,7 @@ Install Python, create a virtual environment, then run:
 
     python build.py
 
-The application is placed in `../output/MarkdownViewer`. Keep the executable and its companion `_internal` folder together. Build separately on Windows, macOS, and Linux using that OS; a Windows executable is not a cross-platform binary.
+The application is placed in `../../output/MarkdownViewer`. Keep the executable and its companion `_internal` folder together. Build separately on Windows, macOS, and Linux using that OS; a Windows executable is not a cross-platform binary.
 
 Windows builds restrict DLL discovery to Python and Windows directories to prevent unrelated applications on PATH from supplying incompatible DLLs. Windows 10/11 supplies the system ICU library used by Qt.
 

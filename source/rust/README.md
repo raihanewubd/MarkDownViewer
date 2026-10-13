@@ -29,7 +29,7 @@ The executable has an integration test mode:
 
     markup-viewer.exe --self-test ABSOLUTE_REPORT_PATH ABSOLUTE_SAMPLE_PATH
 
-Use `../sample.md` as the sample file, with `../sample-tabs.md` alongside it. The test initializes the real WebView2 frontend, verifies rendering, TOC navigation, multiple tabs, full path titles, view restoration, duplicate detection and closing tabs, writes a JSON report, and closes the window. Verify both a passing report and successful process exit. The test window remains hidden. The Windows helper `scripts/verify.ps1 -Executable ABSOLUTE_EXE_PATH` performs this check and measures elapsed time.
+Use `sample.md` as the sample file, with `sample-tabs.md` alongside it. The test initializes the real WebView2 frontend, verifies rendering, TOC navigation, multiple tabs, full path titles, view restoration, duplicate detection and closing tabs, writes a JSON report, and closes the window. Verify both a passing report and successful process exit. The test window remains hidden. The Windows helper `scripts/verify.ps1 -Executable ABSOLUTE_EXE_PATH` performs this check and measures elapsed time.
 
 ## Create the full Windows setup
 
